@@ -8,7 +8,22 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+## Data Generation
 
+#### Maximum Likelihood Solution
+$$
+\begin{align}
+& L(\lambda) = \prod_{i=1}^{n}\frac{(\lambda x_i)^{y_i}}{y_i!} e^{-\lambda}\\
+& l(\lambda) = \sum_{i=1}^{n}log(\frac{(\lambda x_i)^{y_i}}{y_i!} e^{-\lambda x_i}) 
+= log\lambda\sum_{i=1}^{n}y+\sum_{i=1}^{n}logx_i-\lambda\sum_{i=1}^{n}x_i-\sum_{i=1}^{n}logy_i! \\
+& \hat{\lambda}_{MLE} = \\\
+\frac{1}{n}\sum_{i=1}^{n}X_i\\
+\end{align}
+$$
+
+```{r}
+set.seed(222)
+x_sim <- rpois(10, 327)
+mean(x_sim)
 ```
 
