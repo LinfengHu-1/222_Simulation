@@ -1,0 +1,14 @@
+---
+title: "Simulation Study Report"
+author: "Yunyang Zhong, Katherin Li, Linfeng Hu"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+```
+
