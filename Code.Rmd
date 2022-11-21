@@ -13,17 +13,44 @@ knitr::opts_chunk$set(echo = TRUE)
 #### Maximum Likelihood Solution
 $$
 \begin{align}
-& L(\lambda) = \prod_{i=1}^{n}\frac{(\lambda x_i)^{y_i}}{y_i!} e^{-\lambda}\\
-& l(\lambda) = \sum_{i=1}^{n}log(\frac{(\lambda x_i)^{y_i}}{y_i!} e^{-\lambda x_i}) 
-= log\lambda\sum_{i=1}^{n}y+\sum_{i=1}^{n}logx_i-\lambda\sum_{i=1}^{n}x_i-\sum_{i=1}^{n}logy_i! \\
-& \hat{\lambda}_{MLE} = \\\
-\frac{1}{n}\sum_{i=1}^{n}X_i\\
+& L(X_1...X_n) = \sum_{i=1}^{n} exp(-\lambda) \frac{\lambda^{X_i}}{X_i!}\\
+& l(X_1...X_n) = log(L(X_1...X_n)) = -n\lambda - \sum_{i=1}^{n}log(X_i!)+log(\lambda)\sum_{i=1}^{n}X_i \\
+& \frac{dl}{d\lambda} = -n + \frac{\sum_{i=1}^{n}X_i}{\lambda} \quad \longrightarrow \quad \hat{\lambda}_{MLE} = \frac{\sum_{i=1}^{n}X_i}{n}
 \end{align}
 $$
 
 ```{r}
 set.seed(222)
 x_sim <- rpois(10, 327)
-mean(x_sim)
+x_MLE <- sum(x_sim)/10
+x_MLE
 ```
+
+
+#### Bootstrap
+```{r, warning=FALSE}
+x_boot <-sample(x_sim, size=10, replace = T)
+mean(x_boot)
+```
+
+
+
+
+
+
+#### Method of Moment Solution
+Using second method to estimate $\hat \lambda$.
+$$
+\begin{align}
+& E[X^2] = Var(X) + E[X^2] = \lambda+\lambda^2 \\
+& 2nd\;sample\;moment = \frac{\sum_{i=1}^{n}X_i^2}{n}\\
+\end{align}
+$$
+
+```{r}
+sum(x_sim^2)/10
+```
+
+
+
 
