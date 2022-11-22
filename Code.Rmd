@@ -210,34 +210,31 @@ library(data.table)
 library(dplyr)
 results <- rbindlist(lapply(c(10, 100, 500), function(n){
   rbindlist(lapply(c(700, 800, 900, 1000, 1100), function(param){
-    x_pois <- round(rpois(n, param))
+    x_pois <- round(rpois(n*12, param/12))
     
     #calculate lambda hat
-    MLE_pois <- mean(x_pois)
-    boot_pois <- mean(sample(x_pois, size=n, replace = T))
+    MLE_pois <- 12*mean(x_pois)
+    MON <- sample(x_pois, size = 1)*12
     
     #calculate true probability at cutoff
-    truePoisProb <- mean(x_pois < 805)
-    trueNormProb <- mean(x_norm < 805)
+    trueProb <- mean(x_pois*12 < 805)
     
-    par_pois <- ppois(805, MLE_pois)
-    par_norm <- pnorm(805, MLE_norm, 100)
-    par_boot <- ppois(805, boot_pois)
+    par_MLE <- ppois(805, MLE_pois)
+    par_MON <- ppois(805, MON)
     
     #calculate asymptotic variance 
-    v_pois <- par_pois*(1-par_pois)/sqrt(n)
-    v_norm <- par_norm*(1-par_norm)/sqrt(n)
-    v_boot <- par_boot*(1-par_boot)/sqrt(n)
+    v_MLE <- par_MLE*(1-par_MLE)/sqrt(n)
+    v_MON <- par_MON*(1-par_MON)/sqrt(n)
     
     # Return estimates in data table
     data.table(n = c(n, n),
-               estimator = factor(c("Poisson", "Normal")),
+               estimator = factor(c("MLE", "MON")),
                param_mu = c(param, param),
-               trueProb = c(truePoisProb, trueNormProb), 
-               estimate = c(MLE_pois, MLE_norm),
+               trueProb = c(trueProb, trueProb), 
+               estimate = c(MLE_pois, MON),
                #variances = c(var_pois, var_norm),
-               prob = c(par_pois, par_norm),
-               asymptotic_var = c(v_pois, v_norm)
+               prob = c(par_MLE, par_MON),
+               asymptotic_var = c(v_MLE, v_MON)
                )
   }))
   }))
