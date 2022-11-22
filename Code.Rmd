@@ -87,6 +87,33 @@ bias_sim %>%
   theme_classic()
 ```
 
+```{r}
+set.seed(222)
+library(data.table)
+result <- rbindlist(lapply(c(10, 100, 500), function(n){
+  rbindlist(lapply(c(300, 330, 350), function(trueVal){
+    x_pois <- rpois(n, trueVal)
+    x_norm <- rnorm(n, trueVal, 20)
+    
+    #calculate lambda hat
+    MLE_pois <- mean(x_pois)
+    MLE_norm <- mean(x_norm)
+    
+    #calculate analytic variance
+    var_pois <- sd(x_pois)^2
+    var_norm <- sd(x_norm)^2
+    
+    # Return estimates in data table
+    data.table(n = n, estimator = factor(c("Poisson", "Normal")), trueValue = trueVal,
+               estimate = c(MLE_pois, MLE_norm), variances = c(var_pois, var_norm))
+  }))
+  }))
+result
+```
+
+
+
+
 
 
 
