@@ -90,27 +90,63 @@ bias_sim %>%
 ```{r}
 set.seed(222)
 library(data.table)
-result <- rbindlist(lapply(c(10, 100, 500), function(n){
-  rbindlist(lapply(c(300, 330, 350), function(trueVal){
+results <- rbindlist(lapply(c(10, 100, 500), function(n){
+  rbindlist(lapply(c(700, 800, 900, 1000, 1100), function(trueVal){
     x_pois <- rpois(n, trueVal)
-    x_norm <- rnorm(n, trueVal, 20)
+    x_norm <- rnorm(n, trueVal, 100)
     
     #calculate lambda hat
     MLE_pois <- mean(x_pois)
     MLE_norm <- mean(x_norm)
     
-    #calculate analytic variance
+    #calculate ???? variance
     var_pois <- sd(x_pois)^2
     var_norm <- sd(x_norm)^2
     
+    par_pois <- ppois(310, MLE_pois)
+    par_norm <- pnorm(310, MLE_norm)
+    
+    #calculate analytic variance
+    v_pois <- par_pois*(1-par_pois)
+    v_norm <- par_norm*(1-par_norm)
+    
     # Return estimates in data table
     data.table(n = n, estimator = factor(c("Poisson", "Normal")), trueValue = trueVal,
-               estimate = c(MLE_pois, MLE_norm), variances = c(var_pois, var_norm))
+               estimate = c(MLE_pois, MLE_norm), 
+               #variances = c(var_pois, var_norm),
+               prob = c(par_pois, par_norm),
+               var = c(v_pois, v_norm))
+    
   }))
   }))
 result
 ```
+```{r}
+# Get results from simulation
+bias_sim = results[, .(mean_bias = mean(prob - trueValue),
+                           lower_bias = quantile(estimate - trueValue, 0.025),
+                           upper_bias = quantile(estimate - trueValue, 0.975)),
+by = c("n", "trueValue", "estimator")]
 
+mse_sim <- result[, .(mean_mse = mean((estimate - trueValue)^2),
+                          lower_mse = quantile((estimate - trueValue)^2, 0.025),
+                          upper_mse = quantile((estimate - trueValue)^2, 0.975)),
+                      by = c("n", "trueValue", "estimator")]
+
+estimator_var <- result[, .(var_est = var(estimate)), by = c("n", "trueValue", "estimator")]
+
+library(ggplot2)
+library(dplyr)
+# Plot of bias, facet by beta
+bias_sim %>%
+  ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
+  geom_pointrange(aes(ymin = lower_bias, ymax = upper_bias)) + geom_line(alpha = 0.2) +
+  geom_point(aes(shape = factor(trueValue))) +
+  geom_abline(slope = 0, intercept = 0, alpha = 0.2) + facet_wrap(~trueValue) +
+  scale_shape_discrete("True value") +
+  labs(x = "Sample size", y = "Mean bias") +
+  theme_classic()
+```
 
 
 
