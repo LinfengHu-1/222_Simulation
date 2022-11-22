@@ -1,0 +1,351 @@
+---
+title: "Abandoned_Simulation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abandoned Simulation
+```{r}
+set.seed(222)
+library(data.table)
+library(dplyr)
+results <- rbindlist(lapply(c(10, 100, 500), function(n){
+  rbindlist(lapply(c(700, 800, 900, 1000, 1100), function(param){
+    x_pois <- round(rpois(n, param))
+    x_norm <- round(rnorm(n, param, 100))
+    
+    #calculate lambda hat
+    MLE_pois <- mean(x_pois)
+    MLE_norm <- mean(x_norm)
+    boot_pois <- mean(sample(x_pois, size=n, replace = T))
+    
+    # #calculate ???? variance
+    # var_pois <- sd(x_pois)^2
+    # var_norm <- sd(x_norm)^2
+    
+    #calculate true probability at cutoff
+    truePoisProb <- mean(x_pois < 805)
+    trueNormProb <- mean(x_norm < 805)
+    
+    par_pois <- ppois(805, MLE_pois)
+    par_norm <- pnorm(805, MLE_norm, 100)
+    par_boot <- ppois(805, boot_pois)
+    
+    #calculate asymptotic variance 
+    v_pois <- par_pois*(1-par_pois)/sqrt(n)
+    v_norm <- par_norm*(1-par_norm)/sqrt(n)
+    v_boot <- par_boot*(1-par_boot)/sqrt(n)
+    
+    # Return estimates in data table
+    data.table(n = c(n, n),
+               estimator = factor(c("Poisson", "Normal")),
+               param_mu = c(param, param),
+               trueProb = c(truePoisProb, trueNormProb), 
+               estimate = c(MLE_pois, MLE_norm),
+               #variances = c(var_pois, var_norm),
+               prob = c(par_pois, par_norm),
+               asymptotic_var = c(v_pois, v_norm)
+               )
+  }))
+  }))
+options(scipen = 999)
+results <- results %>%
+  mutate_if(is.numeric, round, digits=3)
+results
+```
+
+## Evaluation
+```{r}
+# Get results from simulation
+bias_sim = results[, .(mean_bias = mean(prob - trueProb),
+                           lower_bias = quantile(prob - trueProb, 0.025),
+                           upper_bias = quantile(prob - trueProb, 0.975)),
+by = c("n", "param_mu", "estimator")]
+
+mse_sim <- results[, .(mean_mse = mean((prob - trueProb)^2),
+                          lower_mse = quantile((prob - trueProb)^2, 0.025),
+                          upper_mse = quantile((prob - trueProb)^2, 0.975)),
+                      by = c("n", "param_mu", "estimator")]
+
+estimator_var <- results[, .(var_est = asymptotic_var), 
+                         by = c("n", "param_mu", "estimator")]
+```
+
+#### Plots
+```{r}
+library(ggplot2)
+library(dplyr)
+# Plot of bias, facet by beta
+bias_sim %>%
+  ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
+  geom_pointrange(aes(ymin = lower_bias, ymax = upper_bias)) + geom_line(alpha = 0.2) +
+  geom_point(aes(shape = factor(param_mu))) +
+  geom_abline(slope = 0, intercept = 0, alpha = 0.2) + facet_wrap(~ param_mu) +
+  scale_shape_discrete("True value") +
+  labs(x = "Sample size", y = "Mean bias") +
+  theme_classic()
+
+# Plot of MSE, facet by beta
+mse_sim %>%
+  ggplot(aes(x = n, y = mean_mse, color = estimator)) +
+  geom_ribbon(aes(ymin = lower_mse, ymax = upper_mse, fill = estimator, color = NULL),
+              alpha = 0.2 )+
+  geom_point() + geom_line(alpha = 0.2) +
+  scale_shape_discrete("True value") +
+  geom_abline(slope = 0, intercept = 0, alpha = 0.1) +
+  facet_wrap(~ param_mu) +
+  labs(x = "Sample size", y = "Mean Squared Error") +
+  theme_classic()
+
+# Plot of variance (similar to MSE???)
+estimator_var %>%
+  ggplot(aes(x = n, y = var_est, color = estimator)) +
+  geom_line(alpha = 0.8) +
+  # geom_ribbon(aes(ymin = lower_mse, ymax = upper_mse, fill = estimator, color = NULL),
+  #             alpha = 0.2) + geom_point() + 
+  geom_abline(slope = 0, intercept = 0, alpha = 0.1) +
+  facet_wrap(~param_mu) +
+  labs(x = "Sample size", y = "Variance") +
+  theme_classic()
+```
+
+
+## MLE vs. Bootstrap
+```{r}
+set.seed(222)
+library(data.table)
+library(dplyr)
+results <- rbindlist(lapply(c(10, 100, 500), function(n){
+  rbindlist(lapply(c(700, 800, 900, 1000, 1100), function(param){
+    x_pois <- round(rpois(n, param))
+    
+    #calculate lambda hat
+    MLE_pois <- mean(x_pois)
+    boot_pois <- mean(sample(x_pois, size=n, replace = T))
+    
+    # #calculate asymptotic variance 
+    # v_pois <- par_pois*(1-par_pois)/sqrt(n)
+    # v_boot <- par_boot*(1-par_boot)/sqrt(n)
+    
+    # Return estimates in data table
+    data.table(n = c(n, n),
+               estimator = factor(c("MLE", "Bootstrap")),
+               trueMean = c(param, param),
+               estimatedMean = c(MLE_pois, boot_pois)
+               #asymptotic_var = c(v_pois, v_boot)
+               )
+  }))
+  }))
+options(scipen = 999)
+results <- results %>%
+  mutate_if(is.numeric, round, digits=3)
+results
+```
+
+## Evaluation
+```{r}
+# Get results from simulation
+bias_sim = results[, .(mean_bias = mean(estimatedMean - trueMean),
+                           lower_bias = quantile(estimatedMean - trueMean, 0.025),
+                           upper_bias = quantile(estimatedMean - trueMean, 0.975)),
+by = c("n", "trueMean", "estimator")]
+
+mse_sim <- results[, .(mean_mse = mean((estimatedMean - trueMean)^2),
+                          lower_mse = quantile((estimatedMean - trueMean)^2, 0.025),
+                          upper_mse = quantile((estimatedMean - trueMean)^2, 0.975)),
+                      by = c("n", "trueMean", "estimator")]
+
+# estimator_var <- results[, .(var_est = asymptotic_var), 
+#                          by = c("n", "param_mu", "estimator")]
+```
+
+#### Plots
+```{r}
+library(ggplot2)
+library(dplyr)
+# Plot of bias, facet by beta
+bias_sim %>%
+  ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
+  geom_pointrange(aes(ymin = lower_bias, ymax = upper_bias)) + geom_line(alpha = 0.2) +
+  geom_point(aes(shape = factor(trueMean))) +
+  geom_abline(slope = 0, intercept = 0, alpha = 0.2) + facet_wrap(~ trueMean) +
+  scale_shape_discrete("True value") +
+  labs(x = "Sample size", y = "Mean bias") +
+  theme_classic()
+
+# Plot of MSE, facet by beta
+mse_sim %>%
+  ggplot(aes(x = n, y = mean_mse, color = estimator)) +
+  geom_ribbon(aes(ymin = lower_mse, ymax = upper_mse, fill = estimator, color = NULL),
+              alpha = 0.2 )+
+  geom_point() + geom_line(alpha = 0.2) +
+  scale_shape_discrete("True value") +
+  geom_abline(slope = 0, intercept = 0, alpha = 0.1) +
+  facet_wrap(~ trueMean) +
+  labs(x = "Sample size", y = "Mean Squared Error") +
+  theme_classic()
+
+# # Plot of variance (similar to MSE???)
+# estimator_var %>%
+#   ggplot(aes(x = n, y = var_est, color = estimator)) +
+#   geom_line(alpha = 0.8) +
+#   # geom_ribbon(aes(ymin = lower_mse, ymax = upper_mse, fill = estimator, color = NULL),
+#   #             alpha = 0.2) + geom_point() + 
+#   geom_abline(slope = 0, intercept = 0, alpha = 0.1) +
+#   facet_wrap(~param_mu) +
+#   labs(x = "Sample size", y = "Variance") +
+#   theme_classic()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## ABANDON
+#### Hypothesis Testing
+```{r}
+# set.seed(222)
+# sim_results_hyp <- rbindlist(lapply(c(10, 100, 500), function(n){
+#   rbindlist(lapply(c(700, 800, 900, 1000, 1100), function(param){
+#     x_pois <- round(rpois(n, param))
+#     x_norm <- round(rnorm(n, param, 100))
+#     
+#     # Same as before
+#     MLE_pois <- mean(x_pois)
+#     MLE_norm <- mean(x_norm)
+#     truePoisProb <- mean(x_pois < 805)
+#     trueNormProb <- mean(x_norm < 805)
+#     par_pois <- ppois(805, MLE_pois)
+#     par_norm <- pnorm(805, MLE_norm, 100)
+#     v_pois <- par_pois*(1-par_pois)/sqrt(n)
+#     v_norm <- par_norm*(1-par_norm)/sqrt(n)
+#     
+#     
+#     data = data.table(trueProb = trueProb, x_pois = x_pois, x_norm = x_norm)
+#     # Fit two models for LRT
+#     null_model <- lm(trueProb ~ 0.5, data = data)
+#     alt_mod_pois <- lm(y ~ 0 + x_pois, data = data)
+#     alt_mod_norm <- lm(y ~ 0 + x_norm, data = data)
+#     
+#     # log likelihood approach reject
+#     log_lik_pois <- 2*(abs(logLik(alt_mod_pois) - logLik(null_model))) > qchisq(0.95, df=1)
+#     log_lik_norm <- 2*(abs(logLik(alt_mod_norm) - logLik(null_model))) > qchisq(0.95, df=1)
+#     
+#     # Return estimates in data table
+#     data.table(n = c(n, n),
+#                estimator = factor(c("Poisson", "Normal")),
+#                likelihood = c(log_lik_pois, log_lik_norm),
+#                param_mu = c(param, param),
+#                trueProb = c(truePoisProb, trueNormProb), 
+#                estimate = c(MLE_pois, MLE_norm),
+#                prob = c(par_pois, par_norm),
+#                asymptotic_var = c(v_pois, v_norm)
+#                )
+#   }))
+#   }))
+# options(scipen = 999)
+# sim_results_hyp <- sim_results_hyp %>%
+#   mutate_if(is.numeric, round, digits=3)
+# sim_results_hyp
+```
+
+
+#### Maximum Likelihood Solution
+$$
+\begin{align}
+& L(X_1...X_n) = \sum_{i=1}^{n} exp(-\lambda) \frac{\lambda^{X_i}}{X_i!}\\
+& l(X_1...X_n) = log(L(X_1...X_n)) = -n\lambda - \sum_{i=1}^{n}log(X_i!)+log(\lambda)\sum_{i=1}^{n}X_i \\
+& \frac{dl}{d\lambda} = -n + \frac{\sum_{i=1}^{n}X_i}{\lambda} \quad \longrightarrow \quad \hat{\lambda}_{MLE} = \frac{\sum_{i=1}^{n}X_i}{n}
+\end{align}
+$$
+
+Using second method to estimate $\hat \lambda$.
+$$
+\begin{align}
+& E[X^2] = Var(X) + E[X^2] = \lambda+\lambda^2 \\
+& 2nd\;sample\;moment = \frac{\sum_{i=1}^{n}X_i^2}{n}\\
+\end{align}
+$$
+
+```{r}
+# set.seed(222)
+# library(data.table)
+# result <- rbindlist(lapply(c(10, 100, 500), function(n){
+#   rbindlist(lapply(c(300, 330, 350), function(param){
+#     x_pois <- rpois(n, param)
+#     x_norm <- rnorm(n, param, 20)
+#     
+#     #calculate lambda hat
+#     MLE_pois <- mean(x_pois)
+#     MLE_norm <- mean(x_norm)
+#     
+#     #calculate analytic variance
+#     var_pois <- sd(x_pois)^2
+#     var_norm <- sd(x_norm)^2
+#     
+#     # Return estimates in data table
+#     data.table(n = n, estimator = factor(c("Poisson", "Normal")), paramue = param,
+#                estimate = c(MLE_pois, MLE_norm), variances = c(var_pois, var_norm))
+#   }))
+#   }))
+# result
+```
+
+```{r}
+# # Get results from simulation
+# bias_sim = result[, .(mean_bias = mean(estimate - paramue),
+#                            lower_bias = quantile(estimate - paramue, 0.025),
+#                            upper_bias = quantile(estimate - paramue, 0.975)),
+# by = c("n", "paramue", "estimator")]
+# 
+# mse_sim <- result[, .(mean_mse = mean((estimate - paramue)^2),
+#                           lower_mse = quantile((estimate - paramue)^2, 0.025),
+#                           upper_mse = quantile((estimate - paramue)^2, 0.975)),
+#                       by = c("n", "paramue", "estimator")]
+# 
+# estimator_var <- result[, .(var_est = var(estimate)), by = c("n", "paramue", "estimator")]
+# 
+# library(ggplot2)
+# library(dplyr)
+# # Plot of bias, facet by beta
+# bias_sim %>%
+#   ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
+#   geom_pointrange(aes(ymin = lower_bias, ymax = upper_bias)) + geom_line(alpha = 0.2) +
+#   geom_point(aes(shape = factor(paramue))) +
+#   geom_abline(slope = 0, intercept = 0, alpha = 0.2) + facet_wrap(~param_mu) +
+#   scale_shape_discrete("True value") +
+#   labs(x = "Sample size", y = "Mean bias") +
+#   theme_classic()
+```
+
+#### small example
+```{r, warning=FALSE}
+# set.seed(222)
+# x_boot <- sample(x_sim, size=10, replace = T)
+# boot_MLE <- mean(x_boot)
+# boot_MLE
+# 
+# set.seed(222)
+# x_sim <- rpois(10, 327)
+# x_MLE <- sum(x_sim)/10
+# x_MLE
+```
+
