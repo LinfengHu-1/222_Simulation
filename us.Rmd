@@ -1,0 +1,34 @@
+---
+title: "US"
+author: "Yunyang Zhong"
+date: '2022-11-22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+data<-read.csv("us.csv")
+head(data)
+```
+
+```{r}
+data %>% 
+  filter(State=="MA") %>% 
+  mutate(Year=substring(Start_Time,1,4)) %>% 
+  group_by(Year) %>% 
+  count()
+```
+
+```{r}
+count <- c(820,875,827,691,2363,816)
+mean(count)
+sd(count)
+```
