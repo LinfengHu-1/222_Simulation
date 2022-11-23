@@ -2,6 +2,72 @@ BST222 Project
 ================
 Yunyang Zhong, Tianxiu Li(Katherine), Linfeng Hu
 
+## Data Exploration
+
+``` r
+library(tidyverse)
+
+data<-read.csv("us.csv")
+```
+
+``` r
+data %>% 
+  filter(State=="MA") %>% 
+  mutate(Year=substring(Start_Time,1,4)) %>% 
+  mutate(Month=substring(Start_Time, 6,7)) %>% 
+  group_by(Year) %>% 
+  count()
+```
+
+    ## # A tibble: 6 × 2
+    ## # Groups:   Year [6]
+    ##   Year      n
+    ##   <chr> <int>
+    ## 1 2016    820
+    ## 2 2017    875
+    ## 3 2018    827
+    ## 4 2019    691
+    ## 5 2020   2363
+    ## 6 2021    816
+
+``` r
+data %>% 
+  filter(State=="MA") %>% 
+  mutate(Year=substring(Start_Time,1,4)) %>% 
+  group_by(Year) %>% 
+  count() %>% 
+  ggplot(aes(x = n)) +
+  geom_density()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
+count <- c(820,875,827,691,2363,816)
+mean(count)
+```
+
+    ## [1] 1065.333
+
+``` r
+sd(count)
+```
+
+    ## [1] 638.6626
+
+``` r
+count_1 <- c(820,875,827,691,816)
+mean(count_1)
+```
+
+    ## [1] 805.8
+
+``` r
+sd(count_1)
+```
+
+    ## [1] 68.41564
+
 ## Simulation
 
 ``` r
@@ -12,24 +78,24 @@ results <- rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
   rbindlist(lapply(c(770, 790, 810, 830, 850, 870), function(param){
     x_pois <- round(rpois(n, param))
     
-    #calculate lambda hat
+    # calculate lambda hat
     MLE_pois <- sum(x_pois)/n
     
-    #calculate true probability at cutoff
+    # calculate true probability at cutoff
     trueProb <- ppois(816, param)
     
     par_MLE <- ppois(816, MLE_pois)
     par_CNT <- mean(x_pois <= 816)
     
-    #calculate asymptotic variance 
+    # calculate asymptotic variance 
     v_MLE <- par_MLE*(1-par_MLE)/sqrt(n)
     v_CNT <- par_CNT*(1-par_CNT)/sqrt(n)
     
-    #calculate MSE
+    # calculate MSE
     MSE_MLE <- mean((par_MLE - trueProb)^2)
     MSE_CNT <- mean((par_CNT - trueProb)^2)
     
-    # Return estimates in data table
+    # return estimates in data table
     data.table(n = c(n, n),
                estimator = factor(c("MLE", "CNT")),
                param_mu = c(param, param),
@@ -84,12 +150,11 @@ bias_sim %>%
   #geom_point(aes(shape = factor(param_mu))) +
   geom_abline(slope = 0, intercept = 0, alpha = 0.2) + 
   facet_wrap(~ param_mu) +
-  #scale_shape_discrete("True value") +
   labs(x = "Sample size", y = "Mean bias") +
   theme_classic()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 #### MSE
 
@@ -118,7 +183,7 @@ mse_sim %>%
   theme_classic()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 #### Variance
 
@@ -137,7 +202,7 @@ head(estimator_var)
     ## 6: 50      810       CNT   0.035
 
 ``` r
-# Plot of variance (similar to MSE???)
+# Plot of variance
 estimator_var %>%
   ggplot(aes(x = n, y = var_est, color = estimator)) +
   geom_line(alpha = 0.5) +
@@ -148,4 +213,4 @@ estimator_var %>%
   theme_classic()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
