@@ -1,15 +1,52 @@
 ---
 title: "BST222 Project"
 author: "Yunyang Zhong, Tianxiu Li(Katherine), Linfeng Hu"
-output:
-  github_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
+## Data Exploration
+
+```{r}
+library(tidyverse)
+
+data<-read.csv("us.csv")
+```
+
+```{r}
+data %>% 
+  filter(State=="MA") %>% 
+  mutate(Year=substring(Start_Time,1,4)) %>% 
+  mutate(Month=substring(Start_Time, 6,7)) %>% 
+  group_by(Year) %>% 
+  count()
+```
+
+```{r}
+data %>% 
+  filter(State=="MA") %>% 
+  mutate(Year=substring(Start_Time,1,4)) %>% 
+  group_by(Year) %>% 
+  count() %>% 
+  ggplot(aes(x = n)) +
+  geom_density()
+```
+
+```{r}
+count <- c(820,875,827,691,2363,816)
+mean(count)
+sd(count)
+
+count_1 <- c(820,875,827,691,816)
+mean(count_1)
+sd(count_1)
+```
+
 ## Simulation
+
 ```{r}
 set.seed(222)
 library(data.table)
@@ -18,24 +55,24 @@ results <- rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
   rbindlist(lapply(c(770, 790, 810, 830, 850, 870), function(param){
     x_pois <- round(rpois(n, param))
     
-    #calculate lambda hat
+    # calculate lambda hat
     MLE_pois <- sum(x_pois)/n
     
-    #calculate true probability at cutoff
+    # calculate true probability at cutoff
     trueProb <- ppois(816, param)
     
     par_MLE <- ppois(816, MLE_pois)
     par_CNT <- mean(x_pois <= 816)
     
-    #calculate asymptotic variance 
+    # calculate asymptotic variance 
     v_MLE <- par_MLE*(1-par_MLE)/sqrt(n)
     v_CNT <- par_CNT*(1-par_CNT)/sqrt(n)
     
-    #calculate MSE
+    # calculate MSE
     MSE_MLE <- mean((par_MLE - trueProb)^2)
     MSE_CNT <- mean((par_CNT - trueProb)^2)
     
-    # Return estimates in data table
+    # return estimates in data table
     data.table(n = c(n, n),
                estimator = factor(c("MLE", "CNT")),
                param_mu = c(param, param),
@@ -57,6 +94,7 @@ head(results)
 ## Evaluation
 
 #### Bias
+
 ```{r}
 # Get results from simulation
 bias_sim = results[, .(mean_bias = mean(prob - trueProb)), by = c("n", "param_mu", "estimator")]
@@ -70,12 +108,12 @@ bias_sim %>%
   #geom_point(aes(shape = factor(param_mu))) +
   geom_abline(slope = 0, intercept = 0, alpha = 0.2) + 
   facet_wrap(~ param_mu) +
-  #scale_shape_discrete("True value") +
   labs(x = "Sample size", y = "Mean bias") +
   theme_classic()
 ```
 
 #### MSE
+
 ```{r}
 mse_sim <- results[, .(mean_mse = mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
@@ -91,11 +129,12 @@ mse_sim %>%
 ```
 
 #### Variance
+
 ```{r}
 estimator_var <- results[, .(var_est = asymptotic_var), 
                          by = c("n", "param_mu", "estimator")]
 head(estimator_var)
-# Plot of variance (similar to MSE???)
+# Plot of variance
 estimator_var %>%
   ggplot(aes(x = n, y = var_est, color = estimator)) +
   geom_line(alpha = 0.5) +
@@ -105,4 +144,3 @@ estimator_var %>%
   labs(x = "Sample size", y = "Variance") +
   theme_classic()
 ```
-
