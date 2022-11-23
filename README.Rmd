@@ -51,7 +51,7 @@ results <- rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
 options(scipen = 999)
 results <- results %>%
   mutate_if(is.numeric, round, digits=3)
-results
+head(results)
 ```
 
 ## Evaluation
@@ -60,7 +60,7 @@ results
 ```{r}
 # Get results from simulation
 bias_sim = results[, .(mean_bias = mean(prob - trueProb)), by = c("n", "param_mu", "estimator")]
-bias_sim
+head(bias_sim)
 library(ggplot2)
 library(dplyr)
 # Plot of bias, facet by beta
@@ -78,7 +78,7 @@ bias_sim %>%
 #### MSE
 ```{r}
 mse_sim <- results[, .(mean_mse = mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
-mse_sim
+head(mse_sim)
 # Plot of MSE, facet by beta
 mse_sim %>%
   ggplot(aes(x = n, y = mean_mse, color = estimator)) +
@@ -94,7 +94,7 @@ mse_sim %>%
 ```{r}
 estimator_var <- results[, .(var_est = asymptotic_var), 
                          by = c("n", "param_mu", "estimator")]
-estimator_var
+head(estimator_var)
 # Plot of variance (similar to MSE???)
 estimator_var %>%
   ggplot(aes(x = n, y = var_est, color = estimator)) +
@@ -104,6 +104,5 @@ estimator_var %>%
   facet_wrap(~param_mu) +
   labs(x = "Sample size", y = "Variance") +
   theme_classic()
-
 ```
 
