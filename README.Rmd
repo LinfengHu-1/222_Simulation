@@ -101,7 +101,7 @@ bias_sim = results[, .(mean_bias = mean(prob - trueProb)), by = c("n", "param_mu
 head(bias_sim)
 library(ggplot2)
 library(dplyr)
-# Plot of bias, facet by beta
+# Plot of bias, facet by lambda
 bias_sim %>%
   ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
   geom_point() + geom_line(alpha=0.5) +
@@ -117,7 +117,7 @@ bias_sim %>%
 ```{r}
 mse_sim <- results[, .(mean_mse = asymptotic_var+ mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
-# Plot of MSE, facet by beta
+# Plot of MSE, facet by lambda
 mse_sim %>%
   ggplot(aes(x = n, y = mean_mse, color = estimator)) +
   geom_point() + geom_line(alpha = 0.2) +
