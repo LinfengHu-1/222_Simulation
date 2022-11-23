@@ -159,17 +159,17 @@ bias_sim %>%
 #### MSE
 
 ``` r
-mse_sim <- results[, .(mean_mse = mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
+mse_sim <- results[, .(mean_mse = asymptotic_var+ mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
 ```
 
     ##     n param_mu estimator mean_mse
-    ## 1: 50      770       MLE 0.000049
+    ## 1: 50      770       MLE 0.007049
     ## 2: 50      770       CNT 0.002304
-    ## 3: 50      790       MLE 0.000324
-    ## 4: 50      790       CNT 0.001089
-    ## 5: 50      810       MLE 0.002809
-    ## 6: 50      810       CNT 0.012544
+    ## 3: 50      790       MLE 0.022324
+    ## 4: 50      790       CNT 0.018089
+    ## 5: 50      810       MLE 0.037809
+    ## 6: 50      810       CNT 0.047544
 
 ``` r
 # Plot of MSE, facet by beta

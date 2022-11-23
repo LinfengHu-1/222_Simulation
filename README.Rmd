@@ -115,7 +115,7 @@ bias_sim %>%
 #### MSE
 
 ```{r}
-mse_sim <- results[, .(mean_mse = mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
+mse_sim <- results[, .(mean_mse = asymptotic_var+ mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
 # Plot of MSE, facet by beta
 mse_sim %>%
