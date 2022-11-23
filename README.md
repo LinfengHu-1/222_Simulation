@@ -143,7 +143,7 @@ head(bias_sim)
 ``` r
 library(ggplot2)
 library(dplyr)
-# Plot of bias, facet by beta
+# Plot of bias, facet by lambda
 bias_sim %>%
   ggplot(aes(x = n, y = mean_bias, color = estimator)) + 
   geom_point() + geom_line(alpha=0.5) +
@@ -172,7 +172,7 @@ head(mse_sim)
     ## 6: 50      810       CNT 0.047544
 
 ``` r
-# Plot of MSE, facet by beta
+# Plot of MSE, facet by lambda
 mse_sim %>%
   ggplot(aes(x = n, y = mean_mse, color = estimator)) +
   geom_point() + geom_line(alpha = 0.2) +
