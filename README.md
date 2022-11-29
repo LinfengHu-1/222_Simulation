@@ -74,108 +74,49 @@ sd(count_1)
 set.seed(222)
 library(data.table)
 library(dplyr)
-results <- rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
+results <- rbindlist(lapply(1:1000, function(i){
+  rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
   rbindlist(lapply(c(770, 790, 810, 830, 850, 870), function(param){
     x_pois <- round(rpois(n, param))
     
     # calculate lambda hat
     MLE_pois <- sum(x_pois)/n
-    
     # calculate true probability at cutoff
     trueProb <- ppois(816, param)
     
     par_MLE <- ppois(816, MLE_pois)
-    par_CNT <- mean(x_pois <= 816)
-    
-    # calculate asymptotic variance 
-    v_MLE <- par_MLE*(1-par_MLE)/sqrt(n)
-    v_CNT <- par_CNT*(1-par_CNT)/sqrt(n)
-    
-    # calculate MSE
-    MSE_MLE <- mean((par_MLE - trueProb)^2)
-    MSE_CNT <- mean((par_CNT - trueProb)^2)
+    par_CNT <- sum(x_pois <= 816)/n
+  
     
     # return estimates in data table
     data.table(n = c(n, n),
                estimator = factor(c("MLE", "CNT")),
                param_mu = c(param, param),
                trueProb = c(trueProb, trueProb), 
-               #estimate = c(MLE_pois, CNT),
-               #variances = c(var_pois, var_norm),
-               prob = c(par_MLE, par_CNT),
-               asymptotic_var = c(v_MLE, v_CNT),
-               MSE = c(MSE_MLE, MSE_CNT)
+               prob = c(par_MLE, par_CNT)
                )
   }))
   }))
+}))
 options(scipen = 999)
 results <- results %>%
-  mutate_if(is.numeric, round, digits=3)
+  mutate_if(is.numeric, round, digits=3) %>%
+  arrange(n, param_mu)
 results
 ```
 
-    ##        n estimator param_mu trueProb  prob asymptotic_var   MSE
-    ##  1:   50       MLE      770    0.952 0.945          0.007 0.000
-    ##  2:   50       CNT      770    0.952 1.000          0.000 0.002
-    ##  3:   50       MLE      790    0.827 0.809          0.022 0.000
-    ##  4:   50       CNT      790    0.827 0.860          0.017 0.001
-    ##  5:   50       MLE      810    0.592 0.539          0.035 0.003
-    ##  6:   50       CNT      810    0.592 0.480          0.035 0.013
-    ##  7:   50       MLE      830    0.321 0.357          0.032 0.001
-    ##  8:   50       CNT      830    0.321 0.360          0.033 0.001
-    ##  9:   50       MLE      850    0.125 0.098          0.013 0.001
-    ## 10:   50       CNT      850    0.125 0.080          0.010 0.002
-    ## 11:   50       MLE      870    0.034 0.061          0.008 0.001
-    ## 12:   50       CNT      870    0.034 0.020          0.003 0.000
-    ## 13:  100       MLE      770    0.952 0.936          0.006 0.000
-    ## 14:  100       CNT      770    0.952 0.930          0.007 0.000
-    ## 15:  100       MLE      790    0.827 0.846          0.013 0.000
-    ## 16:  100       CNT      790    0.827 0.820          0.015 0.000
-    ## 17:  100       MLE      810    0.592 0.567          0.025 0.001
-    ## 18:  100       CNT      810    0.592 0.570          0.025 0.001
-    ## 19:  100       MLE      830    0.321 0.383          0.024 0.004
-    ## 20:  100       CNT      830    0.321 0.430          0.025 0.012
-    ## 21:  100       MLE      850    0.125 0.127          0.011 0.000
-    ## 22:  100       CNT      850    0.125 0.110          0.010 0.000
-    ## 23:  100       MLE      870    0.034 0.029          0.003 0.000
-    ## 24:  100       CNT      870    0.034 0.010          0.001 0.001
-    ## 25:  500       MLE      770    0.952 0.951          0.002 0.000
-    ## 26:  500       CNT      770    0.952 0.960          0.002 0.000
-    ## 27:  500       MLE      790    0.827 0.845          0.006 0.000
-    ## 28:  500       CNT      790    0.827 0.832          0.006 0.000
-    ## 29:  500       MLE      810    0.592 0.611          0.011 0.000
-    ## 30:  500       CNT      810    0.592 0.626          0.010 0.001
-    ## 31:  500       MLE      830    0.321 0.327          0.010 0.000
-    ## 32:  500       CNT      830    0.321 0.310          0.010 0.000
-    ## 33:  500       MLE      850    0.125 0.124          0.005 0.000
-    ## 34:  500       CNT      850    0.125 0.124          0.005 0.000
-    ## 35:  500       MLE      870    0.034 0.036          0.002 0.000
-    ## 36:  500       CNT      870    0.034 0.042          0.002 0.000
-    ## 37: 1000       MLE      770    0.952 0.949          0.002 0.000
-    ## 38: 1000       CNT      770    0.952 0.951          0.001 0.000
-    ## 39: 1000       MLE      790    0.827 0.841          0.004 0.000
-    ## 40: 1000       CNT      790    0.827 0.858          0.004 0.001
-    ## 41: 1000       MLE      810    0.592 0.602          0.008 0.000
-    ## 42: 1000       CNT      810    0.592 0.609          0.008 0.000
-    ## 43: 1000       MLE      830    0.321 0.317          0.007 0.000
-    ## 44: 1000       CNT      830    0.321 0.326          0.007 0.000
-    ## 45: 1000       MLE      850    0.125 0.115          0.003 0.000
-    ## 46: 1000       CNT      850    0.125 0.119          0.003 0.000
-    ## 47: 1000       MLE      870    0.034 0.040          0.001 0.000
-    ## 48: 1000       CNT      870    0.034 0.034          0.001 0.000
-    ## 49: 5000       MLE      770    0.952 0.952          0.001 0.000
-    ## 50: 5000       CNT      770    0.952 0.950          0.001 0.000
-    ## 51: 5000       MLE      790    0.827 0.826          0.002 0.000
-    ## 52: 5000       CNT      790    0.827 0.830          0.002 0.000
-    ## 53: 5000       MLE      810    0.592 0.591          0.003 0.000
-    ## 54: 5000       CNT      810    0.592 0.590          0.003 0.000
-    ## 55: 5000       MLE      830    0.321 0.322          0.003 0.000
-    ## 56: 5000       CNT      830    0.321 0.321          0.003 0.000
-    ## 57: 5000       MLE      850    0.125 0.123          0.002 0.000
-    ## 58: 5000       CNT      850    0.125 0.126          0.002 0.000
-    ## 59: 5000       MLE      870    0.034 0.035          0.000 0.000
-    ## 60: 5000       CNT      870    0.034 0.032          0.000 0.000
-    ##        n estimator param_mu trueProb  prob asymptotic_var   MSE
+    ##           n estimator param_mu trueProb  prob
+    ##     1:   50       MLE      770    0.952 0.945
+    ##     2:   50       CNT      770    0.952 1.000
+    ##     3:   50       MLE      770    0.952 0.974
+    ##     4:   50       CNT      770    0.952 1.000
+    ##     5:   50       MLE      770    0.952 0.946
+    ##    ---                                       
+    ## 59996: 5000       CNT      870    0.034 0.035
+    ## 59997: 5000       MLE      870    0.034 0.034
+    ## 59998: 5000       CNT      870    0.034 0.035
+    ## 59999: 5000       MLE      870    0.034 0.032
+    ## 60000: 5000       CNT      870    0.034 0.027
 
 ## Evaluation
 
@@ -188,12 +129,12 @@ head(bias_sim)
 ```
 
     ##     n param_mu estimator mean_bias
-    ## 1: 50      770       MLE    -0.007
-    ## 2: 50      770       CNT     0.048
-    ## 3: 50      790       MLE    -0.018
-    ## 4: 50      790       CNT     0.033
-    ## 5: 50      810       MLE    -0.053
-    ## 6: 50      810       CNT    -0.112
+    ## 1: 50      770       MLE -0.001531
+    ## 2: 50      770       CNT  0.000740
+    ## 3: 50      790       MLE -0.001987
+    ## 4: 50      790       CNT  0.001000
+    ## 5: 50      810       MLE  0.000545
+    ## 6: 50      810       CNT  0.002280
 
 ``` r
 library(ggplot2)
@@ -214,17 +155,17 @@ bias_sim %>%
 #### MSE
 
 ``` r
-mse_sim <- results[, .(mean_mse = asymptotic_var+ mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
+mse_sim <- results[, .(mean_mse = mean(var(prob)+ (prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
 ```
 
-    ##     n param_mu estimator mean_mse
-    ## 1: 50      770       MLE 0.007049
-    ## 2: 50      770       CNT 0.002304
-    ## 3: 50      790       MLE 0.022324
-    ## 4: 50      790       CNT 0.018089
-    ## 5: 50      810       MLE 0.037809
-    ## 6: 50      810       CNT 0.047544
+    ##     n param_mu estimator    mean_mse
+    ## 1: 50      770       MLE 0.000441994
+    ## 2: 50      770       CNT 0.001725595
+    ## 3: 50      790       MLE 0.002596315
+    ## 4: 50      790       CNT 0.005639020
+    ## 5: 50      810       MLE 0.006419556
+    ## 6: 50      810       CNT 0.009544534
 
 ``` r
 # Plot of MSE, facet by lambda
@@ -243,18 +184,18 @@ mse_sim %>%
 #### Variance
 
 ``` r
-estimator_var <- results[, .(var_est = asymptotic_var), 
+estimator_var <- results[, .(var_est = mean(var(prob))), 
                          by = c("n", "param_mu", "estimator")]
 head(estimator_var)
 ```
 
-    ##     n param_mu estimator var_est
-    ## 1: 50      770       MLE   0.007
-    ## 2: 50      770       CNT   0.000
-    ## 3: 50      790       MLE   0.022
-    ## 4: 50      790       CNT   0.017
-    ## 5: 50      810       MLE   0.035
-    ## 6: 50      810       CNT   0.035
+    ##     n param_mu estimator      var_est
+    ## 1: 50      770       MLE 0.0002199350
+    ## 2: 50      770       CNT 0.0008629554
+    ## 3: 50      790       MLE 0.0012968317
+    ## 4: 50      790       CNT 0.0028204204
+    ## 5: 50      810       MLE 0.0032112352
+    ## 6: 50      810       CNT 0.0047720537
 
 ``` r
 # Plot of variance

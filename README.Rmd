@@ -51,45 +51,37 @@ sd(count_1)
 set.seed(222)
 library(data.table)
 library(dplyr)
-results <- rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
+results <- rbindlist(lapply(1:1000, function(i){
+  rbindlist(lapply(c(50, 100, 500, 1000, 5000), function(n){
   rbindlist(lapply(c(770, 790, 810, 830, 850, 870), function(param){
     x_pois <- round(rpois(n, param))
     
     # calculate lambda hat
     MLE_pois <- sum(x_pois)/n
-    
     # calculate true probability at cutoff
     trueProb <- ppois(816, param)
     
     par_MLE <- ppois(816, MLE_pois)
-    par_CNT <- mean(x_pois <= 816)
-    
-    # calculate asymptotic variance 
-    v_MLE <- par_MLE*(1-par_MLE)/sqrt(n)
-    v_CNT <- par_CNT*(1-par_CNT)/sqrt(n)
-    
-    # calculate MSE
-    MSE_MLE <- mean((par_MLE - trueProb)^2)
-    MSE_CNT <- mean((par_CNT - trueProb)^2)
+    par_CNT <- sum(x_pois <= 816)/n
+  
     
     # return estimates in data table
     data.table(n = c(n, n),
                estimator = factor(c("MLE", "CNT")),
                param_mu = c(param, param),
                trueProb = c(trueProb, trueProb), 
-               #estimate = c(MLE_pois, CNT),
-               #variances = c(var_pois, var_norm),
-               prob = c(par_MLE, par_CNT),
-               asymptotic_var = c(v_MLE, v_CNT),
-               MSE = c(MSE_MLE, MSE_CNT)
+               prob = c(par_MLE, par_CNT)
                )
   }))
   }))
+}))
 options(scipen = 999)
 results <- results %>%
-  mutate_if(is.numeric, round, digits=3)
+  mutate_if(is.numeric, round, digits=3) %>%
+  arrange(n, param_mu)
 results
 ```
+
 
 ## Evaluation
 
@@ -115,7 +107,7 @@ bias_sim %>%
 #### MSE
 
 ```{r}
-mse_sim <- results[, .(mean_mse = asymptotic_var+ mean((prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
+mse_sim <- results[, .(mean_mse = mean(var(prob)+ (prob - trueProb)^2)), by = c("n", "param_mu", "estimator")]
 head(mse_sim)
 # Plot of MSE, facet by lambda
 mse_sim %>%
@@ -131,7 +123,7 @@ mse_sim %>%
 #### Variance
 
 ```{r}
-estimator_var <- results[, .(var_est = asymptotic_var), 
+estimator_var <- results[, .(var_est = mean(var(prob))), 
                          by = c("n", "param_mu", "estimator")]
 head(estimator_var)
 # Plot of variance
