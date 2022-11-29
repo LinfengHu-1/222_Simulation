@@ -80,6 +80,7 @@ results <- results %>%
   mutate_if(is.numeric, round, digits=3) %>%
   arrange(n, param_mu)
 results
+results|>filter(n==50,estimator=="MLE",param_mu==810)|>summarise(mean=mean(prob))
 ```
 
 

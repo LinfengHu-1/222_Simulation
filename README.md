@@ -118,6 +118,13 @@ results
     ## 59999: 5000       MLE      870    0.034 0.032
     ## 60000: 5000       CNT      870    0.034 0.027
 
+``` r
+results|>filter(n==50,estimator=="MLE",param_mu==810)|>summarise(mean=mean(prob))
+```
+
+    ##       mean
+    ## 1 0.592545
+
 ## Evaluation
 
 #### Bias
